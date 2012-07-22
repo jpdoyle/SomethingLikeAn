@@ -1,0 +1,7 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define SomethingLikeAn_VERSION_MAJOR @SomethingLikeAn_VERSION_MAJOR@
+#define SomethingLikeAn_VERSION_MINOR @SomethingLikeAn_VERSION_MINOR@
+
+#endif

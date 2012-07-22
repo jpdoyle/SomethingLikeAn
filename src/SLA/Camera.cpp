@@ -28,8 +28,9 @@ namespace sla {
             delta = target-distanceMoved_;
             distanceMoved_ = 0;
             transitions_.pop();
+        } else {
+            distanceMoved_ += delta;
         }
-        distanceMoved_ += delta;
 
         switch(transition) {
         case Left:

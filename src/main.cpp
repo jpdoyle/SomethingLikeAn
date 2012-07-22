@@ -19,13 +19,23 @@ int main() {
                             sf::Style::Default & (~sf::Style::Resize));
 
     sf::Texture t;
-    t.loadFromFile("link.png");
-
-    sf::Sprite s;
-    s.setTexture(t);
     {
-        sf::FloatRect bounds = s.getLocalBounds();
-        s.setOrigin(bounds.width/2,bounds.height/2);
+        t.loadFromFile("link.png");
+    }
+
+    sf::Sprite player;
+    {
+        player.setTexture(t);
+        sf::FloatRect bounds = player.getLocalBounds();
+        player.setOrigin(bounds.width/2,bounds.height/2);
+    }
+
+    sf::VertexArray map(sf::Quads,4);
+    {
+        map[0] = sf::Vertex(sf::Vector2f(width*4,0),       sf::Color::Blue);
+        map[1] = sf::Vertex(sf::Vector2f(0,      0),       sf::Color::Yellow);
+        map[2] = sf::Vertex(sf::Vector2f(0,      height*4),sf::Color::Green);
+        map[3] = sf::Vertex(sf::Vector2f(width*4,height*4),sf::Color::Red);
     }
 
     State state = NORMAL;
@@ -46,19 +56,17 @@ int main() {
 
         cam.update(secondsPerFrame);
 
-        if(cam.transitioning()) {
-            window.setView(cam.view());
-        } else {
+        if(!cam.transitioning()) {
             xVel = (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) ? 1 : 0) -
                     (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) ? 1 : 0);
             yVel = (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)  ? 1 : 0) -
                     (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)   ? 1 : 0);
 
-            s.move(xVel*secondsPerFrame*movementSpeed,
+            player.move(xVel*secondsPerFrame*movementSpeed,
                    yVel*secondsPerFrame*movementSpeed);
             
             sf::FloatRect bounds = cam.bounds();
-            sf::Vector2f center = s.getPosition();
+            sf::Vector2f center = player.getPosition();
             if(!bounds.contains(center)) {
                 if(center.x < bounds.left)
                     cam.addTransition(sla::Camera::Left);
@@ -71,9 +79,11 @@ int main() {
             }
         }
 
+        window.setView(cam.view());
 
         window.clear();
-        window.draw(s);
+        window.draw(map);
+        window.draw(player);
         window.display();
         
         sf::sleep(sf::seconds(secondsPerFrame)-frameTime.getElapsedTime());

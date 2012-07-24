@@ -9,7 +9,7 @@ namespace sla {
         return !transitions_.empty();
     }
 
-    bool Camera::update(float dt) {
+    bool Camera::update(sf::Time dt) {
         if(!transitioning())
             return false;
 
@@ -22,7 +22,7 @@ namespace sla {
         else
             target = size.y;
 
-        delta = target/transitionTime_*dt;
+        delta = target/transitionTime_*dt.asSeconds();
 
         if(distanceMoved_+delta > target) {
             delta = target-distanceMoved_;

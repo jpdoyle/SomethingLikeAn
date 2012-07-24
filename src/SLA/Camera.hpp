@@ -26,7 +26,7 @@ namespace sla {
 
         void addTransition(Direction where);
         // returns true if something changes
-        bool update(float dt);
+        bool update(sf::Time dt);
         bool transitioning() const;
 
         const sf::View& view() const { return view_; }

@@ -20,7 +20,8 @@ include_directories("${PROJECT_BINARY_DIR}/config")
 # Define sources and executable
 set(EXECUTABLE_NAME "SomethingLikeAn")
 add_executable(${EXECUTABLE_NAME} src/main.cpp
-                                  src/SLA/Camera.cpp)
+                                  src/SLA/Camera.cpp
+                                  src/SLA/AnimatedSprite.cpp)
 
 
 # Detect and add SFML

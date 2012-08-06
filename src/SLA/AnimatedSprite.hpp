@@ -7,13 +7,27 @@
 
 namespace sla {
 
-    typedef std::vector<std::pair<sf::Time,sf::IntRect> > Animation;
+    void centerSpriteOrigin(sf::Sprite& s);
+
+    struct AnimationFrame {
+        sf::IntRect textureRect;
+        bool flipX,flipY;
+
+        AnimationFrame(sf::IntRect textureRect_ = sf::IntRect(),
+                       bool flipX_ = false,bool flipY_ = false) :
+            textureRect(textureRect_),flipX(flipX_),flipY(flipY_) {}
+
+        void apply(sf::Sprite& s) const;
+    };
+
+    typedef std::vector<std::pair<sf::Time,AnimationFrame> > Animation;
 
     class AnimatedSprite : public sf::Sprite {
         Animation animation_;
         sf::Time frameTime_;
         Animation::iterator currentFrame_;
         bool animating_,paused_;
+
     public:
         AnimatedSprite() {}
         AnimatedSprite(const sf::Texture& texture) : sf::Sprite(texture),paused_(false) {}

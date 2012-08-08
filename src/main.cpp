@@ -1,16 +1,21 @@
 #include "config.h"
-#include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <cstdlib>
 #include <cmath>
 #include "SLA/Camera.hpp"
-#include "SLA/AnimatedSprite.hpp"
+#include "SLA/Animation.hpp"
+#include <iostream>
 
 const float fps = 100;
 const sf::Time timePerFrame = sf::seconds(1/fps);
 const float movementSpeed = 300;
 
 const size_t width = 640,height = 480;
+
+void centerSpriteOrigin(sf::Sprite& s) {
+    sf::FloatRect bounds = s.getLocalBounds();
+    s.setOrigin(bounds.width/2,bounds.height/2);
+}
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(width,height),"test yay!",
@@ -19,44 +24,32 @@ int main() {
         window.setKeyRepeatEnabled(false);
     }
 
+    sla::Animation up,down,left,right;
+    {
+        down.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(0)));
+        down.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(8)));
+        left.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1)));
+        left.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9)));
+        up.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(2)));
+        up.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(10)));
+        right.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1,true)));
+        right.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9,true)));
+    }
+
     sf::Texture t;
     {
         t.loadFromFile("sprites-link.png");
     }
 
-    sla::Animation up,down,left,right;
-    {
-        down.push_back(
-              std::make_pair(sf::seconds(0.1f),
-                    sla::AnimationFrame(sf::IntRect(0*16,0*16,16,16))));
-        down.push_back(
-              std::make_pair(sf::seconds(0.1f),
-                    sla::AnimationFrame(sf::IntRect(0*16,1*16,16,16))));
-        left.push_back(
-              std::make_pair(sf::seconds(0.1f),
-                    sla::AnimationFrame(sf::IntRect(1*16,0*16,16,16))));
-        left.push_back(
-              std::make_pair(sf::seconds(0.1f),
-                    sla::AnimationFrame(sf::IntRect(1*16,1*16,16,16))));
-        up.push_back(
-            std::make_pair(sf::seconds(0.1f),
-                  sla::AnimationFrame(sf::IntRect(2*16,0*16,16,16))));
-        up.push_back(
-            std::make_pair(sf::seconds(0.1f),
-                  sla::AnimationFrame(sf::IntRect(2*16,1*16,16,16))));
-        right.push_back(
-               std::make_pair(sf::seconds(0.1f),
-                     sla::AnimationFrame(sf::IntRect(1*16,0*16,16,16),true)));
-        right.push_back(
-               std::make_pair(sf::seconds(0.1f),
-                     sla::AnimationFrame(sf::IntRect(1*16,1*16,16,16),true)));
-    }
+    sla::ClipSheet sheet(t,sf::Vector2u(16,16));
 
-    sla::AnimatedSprite player;
+    sla::Animator animator(sheet,down);
+
+    sf::Sprite player;
     {
-        player.setTexture(t);
-        player.setAnimation(down);
         player.setScale(3.f,3.f);
+        animator.attach(player);
+        centerSpriteOrigin(player);
     }
 
     sf::VertexArray world(sf::Quads,4);
@@ -88,19 +81,19 @@ int main() {
                 switch(e.key.code) {
                 case sf::Keyboard::Right:
                     keyRight = true;
-                    player.setAnimation(right);
+                    animator.setAnimation(right);
                     break;
                 case sf::Keyboard::Left:
                     keyLeft = true;
-                    player.setAnimation(left);
+                    animator.setAnimation(left);
                     break;
                 case sf::Keyboard::Down:
                     keyDown = true;
-                    player.setAnimation(down);
+                    animator.setAnimation(down);
                     break;
                 case sf::Keyboard::Up:
                     keyUp = true;
-                    player.setAnimation(up);
+                    animator.setAnimation(up);
                     break;
                 default:
                     break;
@@ -111,38 +104,38 @@ int main() {
                 case sf::Keyboard::Right:
                     keyRight = false;
                     if(keyUp)
-                        player.setAnimation(up);
+                        animator.setAnimation(up);
                     else if(keyDown)
-                        player.setAnimation(down);
+                        animator.setAnimation(down);
                     else if(keyLeft)
-                        player.setAnimation(left);
+                        animator.setAnimation(left);
                     break;
                 case sf::Keyboard::Left:
                     keyLeft = false;
                     if(keyUp)
-                        player.setAnimation(up);
+                        animator.setAnimation(up);
                     else if(keyDown)
-                        player.setAnimation(down);
+                        animator.setAnimation(down);
                     else if(keyRight)
-                        player.setAnimation(right);
+                        animator.setAnimation(right);
                     break;
                 case sf::Keyboard::Down:
                     keyDown = false;
                     if(keyUp)
-                        player.setAnimation(up);
+                        animator.setAnimation(up);
                     else if(keyRight)
-                        player.setAnimation(right);
+                        animator.setAnimation(right);
                     else if(keyLeft)
-                        player.setAnimation(left);
+                        animator.setAnimation(left);
                     break;
                 case sf::Keyboard::Up:
                     keyUp = false;
                     if(keyDown)
-                        player.setAnimation(down);
+                        animator.setAnimation(down);
                     else if(keyRight)
-                        player.setAnimation(right);
+                        animator.setAnimation(right);
                     else if(keyLeft)
-                        player.setAnimation(left);
+                        animator.setAnimation(left);
                     break;
                 default:
                     break;
@@ -157,9 +150,9 @@ int main() {
             yVel = (keyDown  ? 1 : 0) - (keyUp   ? 1 : 0);
 
             if(xVel == 0 && yVel == 0)
-                player.pauseAnimation();
-            else if(player.paused())
-                player.startAnimation();
+                animator.pause();
+            else
+                animator.unpause();
 
             player.move(xVel*timePerFrame.asSeconds()*movementSpeed,
                         yVel*timePerFrame.asSeconds()*movementSpeed);
@@ -179,7 +172,7 @@ int main() {
         }
 
         cam.update(timePerFrame);
-        player.update(timePerFrame);
+        animator.update(timePerFrame);
 
         window.setView(cam.view());
 

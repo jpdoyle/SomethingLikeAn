@@ -1,6 +1,15 @@
 #include "ClipSheet.hpp"
+#include <cmath>
 
 namespace sla {
+    
+    void Clip::apply(sf::Sprite& s) const {
+        s.setTextureRect(textureRect);
+        sf::Vector2f scale = s.getScale();
+        scale.x = std::abs(scale.x)*(flipX ? -1 : 1);
+        scale.y = std::abs(scale.y)*(flipY ? -1 : 1);
+        s.setScale(scale);
+    }
     
     ClipSheet::ClipSheet(const sf::Texture& t,sf::Vector2u clipSize) :
       texture_(&t),clipSize_(clipSize) {
@@ -20,6 +29,10 @@ namespace sla {
 
     sf::IntRect ClipSheet::getClipRect(size_t id) const {
         return sf::IntRect(sf::Rect<unsigned>(locations_.at(id),clipSize_));
+    }
+
+    Clip ClipSheet::getClip(size_t id,bool flipX,bool flipY) const {
+        return Clip(getClipRect(id),flipX,flipY);
     }
 
     const sf::Texture& ClipSheet::texture() const {

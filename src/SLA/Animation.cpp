@@ -1,11 +1,15 @@
 #include "Animation.hpp"
-#include <cmath>
 
 namespace sla {
+
+    Clip AnimationFrame::asClip(const ClipSheet& sheet) const {
+        return sheet.getClip(id,flipX,flipY);
+    }
 
     Animator::Animator(const ClipSheet& sheet,const Animation& animation) {
         setClipSheet(sheet);
         setAnimation(animation);
+        setRepeats(true);
     }
 
     void Animator::setClipSheet(const ClipSheet& sheet) {
@@ -29,25 +33,23 @@ namespace sla {
         return animation_;
     }
 
-    void Animator::applyClip_(sf::Sprite& s) const {
-        if(animation_.empty())
-            return;
-        AnimationFrame frame = animation_.at(currentFrame_).second;
-        s.setTextureRect(sheet_->getClipRect(frame.id));
-        sf::Vector2f scale = s.getScale();
-        scale.x = std::abs(scale.x)*(frame.flipX ? -1 : 1);
-        scale.y = std::abs(scale.y)*(frame.flipY ? -1 : 1);
-        s.setScale(scale);
+    AnimationFrame Animator::currentFrame() const {
+        return !animation_.empty() ? animation_.at(currentFrame_).second : AnimationFrame();
+    }
+    
+    Clip Animator::currentClip() const {
+        return currentFrame().asClip(clipSheet());
     }
 
     void Animator::apply(sf::Sprite& s) const {
         s.setTexture(sheet_->texture());
-        applyClip_(s);
+        currentClip().apply(s);
     }
 
     void Animator::applyToAll() const {
+        Clip clip = currentClip();
         for(std::set<sf::Sprite*>::const_iterator i=attachedSprites_.begin();i!=attachedSprites_.end();++i)
-            applyClip_(**i);
+            clip.apply(**i);
     }
     
     void Animator::attach(sf::Sprite& s) {
@@ -79,6 +81,10 @@ namespace sla {
         currentFrame_ = 0; 
     }
 
+    void Animator::setRepeats(bool repeats) {
+        repeats_ = repeats;
+    }
+
     void Animator::update(sf::Time dt) {
         if(!running_ || paused_ ||
            animation_.size() <= 1)
@@ -88,7 +94,16 @@ namespace sla {
         while(frameTime_ > currentFrame.first) {
             frameTime_ -= currentFrame.first;
             ++currentFrame_;
-            currentFrame_ %= animation_.size();
+            if(currentFrame_ >= animation_.size()) {
+                if(!repeats_) {
+                    stop();
+                    currentFrame_ = animation_.size()-1;
+                    applyToAll();
+                    return;
+                } else {
+                    currentFrame_ %= animation_.size();
+                }
+            }
             currentFrame = animation_.at(currentFrame_);
             applyToAll();
         }

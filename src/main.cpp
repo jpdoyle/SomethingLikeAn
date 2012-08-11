@@ -38,7 +38,7 @@ int main() {
 
     sf::Texture t;
     {
-        t.loadFromFile("sprites-link.png");
+        t.loadFromFile("data/sprites-link.png");
     }
 
     sla::ClipSheet sheet(t,sf::Vector2u(16,16));
@@ -50,6 +50,7 @@ int main() {
         player.setScale(3.f,3.f);
         animator.attach(player);
         centerSpriteOrigin(player);
+        player.setLocation(width/2,height/2);
     }
 
     sf::VertexArray world(sf::Quads,4);

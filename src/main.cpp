@@ -50,7 +50,7 @@ int main() {
         player.setScale(3.f,3.f);
         animator.attach(player);
         centerSpriteOrigin(player);
-        player.setLocation(width/2,height/2);
+        player.setPosition(width/2,height/2);
     }
 
     sf::VertexArray world(sf::Quads,4);

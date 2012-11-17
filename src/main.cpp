@@ -17,6 +17,20 @@ void centerSpriteOrigin(sf::Sprite& s) {
     s.setOrigin(bounds.width/2,bounds.height/2);
 }
 
+enum Direction { UP,
+                 DOWN,
+                 LEFT,
+                 RIGHT,
+                 DIRECTION_COUNT };
+
+Direction findNewDirection(Direction current,bool up,bool down,bool left,bool right) {
+    return up    ? UP    :
+           down  ? DOWN  :
+           left  ? LEFT  :
+           right ? RIGHT :
+                   current;
+}
+
 int main() {
     sf::RenderWindow window(sf::VideoMode(width,height),"test yay!",
                             sf::Style::Default & (~sf::Style::Resize));
@@ -24,41 +38,43 @@ int main() {
         window.setKeyRepeatEnabled(false);
     }
 
-    sla::Animation up,down,left,right;
+    sla::Animation animations[DIRECTION_COUNT];
     {
-        down.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(0)));
-        down.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(8)));
-        left.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1)));
-        left.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9)));
-        up.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(2)));
-        up.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(10)));
-        right.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1,true)));
-        right.push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9,true)));
+        animations[DOWN].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(0)));
+        animations[DOWN].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(8)));
+        animations[LEFT].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1)));
+        animations[LEFT].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9)));
+        animations[UP].push_back   (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(2)));
+        animations[UP].push_back   (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(10)));
+        animations[RIGHT].push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1,true)));
+        animations[RIGHT].push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9,true)));
     }
 
-    sf::Texture t;
+    sf::Texture sheetTexture,
+                worldTexture;
     {
-        t.loadFromFile("data/sprites-link.png");
+        sheetTexture.loadFromFile("data/sprites-link.png");
+        worldTexture.loadFromFile("data/world.png");
     }
 
-    sla::ClipSheet sheet(t,sf::Vector2u(16,16));
+    sla::ClipSheet sheet(sheetTexture,sf::Vector2u(16,16));
 
-    sla::Animator animator(sheet,down);
+    Direction direction = DOWN;
+    sla::Animator animator(sheet,animations[direction]);
 
     sf::Sprite player;
     {
         player.setScale(3.f,3.f);
         animator.attach(player);
         centerSpriteOrigin(player);
-        player.setPosition(width/2,height/2);
+        player.setPosition(width/2.0,height/2.0);
     }
 
-    sf::VertexArray world(sf::Quads,4);
+    sf::Sprite worldSprite;
     {
-        world[0] = sf::Vertex(sf::Vector2f(width*4,0),       sf::Color::Blue);
-        world[1] = sf::Vertex(sf::Vector2f(0,      0),       sf::Color::Yellow);
-        world[2] = sf::Vertex(sf::Vector2f(0,      height*4),sf::Color::Green);
-        world[3] = sf::Vertex(sf::Vector2f(width*4,height*4),sf::Color::Red);
+        worldSprite.setTexture(worldTexture);
+        sf::Vector2u texSize = worldTexture.getSize();
+        worldSprite.setScale(4.0*width/texSize.x,4.0*height/texSize.y);
     }
 
     float xVel = 0,yVel = 0;
@@ -74,6 +90,7 @@ int main() {
         frameTime.restart();
         sf::Event e;
         while(window.pollEvent(e)) {
+            Direction oldDirection = direction;
             switch(e.type) {
             case sf::Event::Closed:
                 window.close();
@@ -82,68 +99,54 @@ int main() {
                 switch(e.key.code) {
                 case sf::Keyboard::Right:
                     keyRight = true;
-                    animator.setAnimation(right);
+                    direction = RIGHT;
                     break;
                 case sf::Keyboard::Left:
                     keyLeft = true;
-                    animator.setAnimation(left);
+                    direction = LEFT;
                     break;
                 case sf::Keyboard::Down:
                     keyDown = true;
-                    animator.setAnimation(down);
+                    direction = DOWN;
                     break;
                 case sf::Keyboard::Up:
                     keyUp = true;
-                    animator.setAnimation(up);
+                    direction = UP;
                     break;
                 default:
                     break;
                 }
                 break;
-            case sf::Event::KeyReleased:
+            case sf::Event::KeyReleased: {
+                bool newDirection = true;
+
                 switch(e.key.code) {
                 case sf::Keyboard::Right:
                     keyRight = false;
-                    if(keyUp)
-                        animator.setAnimation(up);
-                    else if(keyDown)
-                        animator.setAnimation(down);
-                    else if(keyLeft)
-                        animator.setAnimation(left);
                     break;
                 case sf::Keyboard::Left:
                     keyLeft = false;
-                    if(keyUp)
-                        animator.setAnimation(up);
-                    else if(keyDown)
-                        animator.setAnimation(down);
-                    else if(keyRight)
-                        animator.setAnimation(right);
                     break;
                 case sf::Keyboard::Down:
                     keyDown = false;
-                    if(keyUp)
-                        animator.setAnimation(up);
-                    else if(keyRight)
-                        animator.setAnimation(right);
-                    else if(keyLeft)
-                        animator.setAnimation(left);
                     break;
                 case sf::Keyboard::Up:
                     keyUp = false;
-                    if(keyDown)
-                        animator.setAnimation(down);
-                    else if(keyRight)
-                        animator.setAnimation(right);
-                    else if(keyLeft)
-                        animator.setAnimation(left);
                     break;
                 default:
+                    newDirection = false;
                     break;
+                }
+
+                if(newDirection)
+                    direction = findNewDirection(direction,keyUp,keyDown,keyLeft,keyRight);
+                break;
                 }
             default:
                 break;
             }
+            if(direction != oldDirection)
+                animator.setAnimation(animations[direction]);
         }
 
         if(!cam.transitioning()) {
@@ -178,7 +181,7 @@ int main() {
         window.setView(cam.view());
 
         window.clear();
-        window.draw(world);
+        window.draw(worldSprite);
         window.draw(player);
         window.display();
         

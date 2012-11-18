@@ -4,6 +4,7 @@
 #include <cmath>
 #include "SLA/Camera.hpp"
 #include "SLA/Animation.hpp"
+#include "SLA/Player.hpp"
 #include <iostream>
 
 const float fps = 100;
@@ -17,17 +18,13 @@ void centerSpriteOrigin(sf::Sprite& s) {
     s.setOrigin(bounds.width/2,bounds.height/2);
 }
 
-enum Direction { UP,
-                 DOWN,
-                 LEFT,
-                 RIGHT,
-                 DIRECTION_COUNT };
-
-Direction findNewDirection(Direction current,bool up,bool down,bool left,bool right) {
-    return up    ? UP    :
-           down  ? DOWN  :
-           left  ? LEFT  :
-           right ? RIGHT :
+sla::Camera::Direction findNewDirection(sla::Camera::Direction current,
+                                        bool up,bool down,
+                                        bool left,bool right) {
+    return up    ? sla::Camera::Up    :
+           down  ? sla::Camera::Down  :
+           left  ? sla::Camera::Left  :
+           right ? sla::Camera::Right :
                    current;
 }
 
@@ -36,18 +33,6 @@ int main() {
                             sf::Style::Default & (~sf::Style::Resize));
     {
         window.setKeyRepeatEnabled(false);
-    }
-
-    sla::Animation animations[DIRECTION_COUNT];
-    {
-        animations[DOWN].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(0)));
-        animations[DOWN].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(8)));
-        animations[LEFT].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1)));
-        animations[LEFT].push_back (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9)));
-        animations[UP].push_back   (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(2)));
-        animations[UP].push_back   (std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(10)));
-        animations[RIGHT].push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(1,true)));
-        animations[RIGHT].push_back(std::make_pair(sf::seconds(0.1f),sla::AnimationFrame(9,true)));
     }
 
     sf::Texture sheetTexture,
@@ -59,16 +44,10 @@ int main() {
 
     sla::ClipSheet sheet(sheetTexture,sf::Vector2u(16,16));
 
-    Direction direction = DOWN;
-    sla::Animator animator(sheet,animations[direction]);
+    sla::Camera::Direction direction = sla::Camera::Down;
 
-    sf::Sprite player;
-    {
-        player.setScale(3.f,3.f);
-        animator.attach(player);
-        centerSpriteOrigin(player);
-        player.setPosition(width/2.0,height/2.0);
-    }
+    sla::Player player(sheet);
+    player.move(sf::Vector2f(width/2,height/2));
 
     sf::Sprite worldSprite;
     {
@@ -77,11 +56,11 @@ int main() {
         worldSprite.setScale(4.0*width/texSize.x,4.0*height/texSize.y);
     }
 
-    float xVel = 0,yVel = 0;
-
     sla::Camera cam(width,height,sf::seconds(1));
+    cam.setFocus(player);
 
-    bool keyRight = false,keyLeft = false,keyUp = false,keyDown = false;
+    bool keyRight = false,keyLeft = false,
+         keyUp = false,keyDown = false;
 
     sf::Clock frameTime;
 
@@ -90,7 +69,7 @@ int main() {
         frameTime.restart();
         sf::Event e;
         while(window.pollEvent(e)) {
-            Direction oldDirection = direction;
+            sla::Camera::Direction oldDirection = direction;
             switch(e.type) {
             case sf::Event::Closed:
                 window.close();
@@ -99,19 +78,19 @@ int main() {
                 switch(e.key.code) {
                 case sf::Keyboard::Right:
                     keyRight = true;
-                    direction = RIGHT;
+                    direction = sla::Camera::Right;
                     break;
                 case sf::Keyboard::Left:
                     keyLeft = true;
-                    direction = LEFT;
+                    direction = sla::Camera::Left;
                     break;
                 case sf::Keyboard::Down:
                     keyDown = true;
-                    direction = DOWN;
+                    direction = sla::Camera::Down;
                     break;
                 case sf::Keyboard::Up:
                     keyUp = true;
-                    direction = UP;
+                    direction = sla::Camera::Up;
                     break;
                 default:
                     break;
@@ -145,38 +124,21 @@ int main() {
             default:
                 break;
             }
-            if(direction != oldDirection)
-                animator.setAnimation(animations[direction]);
+            if(direction != player.direction())
+                player.setDirection(direction);
         }
 
-        if(!cam.transitioning()) {
-            xVel = (keyRight ? 1 : 0) - (keyLeft ? 1 : 0);
-            yVel = (keyDown  ? 1 : 0) - (keyUp   ? 1 : 0);
+        if(cam.transitioning()) {
+            player.setVelocity(sf::Vector2f(0,0),false);
+        } else {
+            int xDir = (keyRight ? 1 : 0) - (keyLeft ? 1 : 0),
+                yDir = (keyDown  ? 1 : 0) - (keyUp   ? 1 : 0);
 
-            if(xVel == 0 && yVel == 0)
-                animator.pause();
-            else
-                animator.unpause();
-
-            player.move(xVel*timePerFrame.asSeconds()*movementSpeed,
-                        yVel*timePerFrame.asSeconds()*movementSpeed);
-            
-            sf::FloatRect bounds = cam.bounds();
-            sf::Vector2f center = player.getPosition();
-            if(!bounds.contains(center)) {
-                if(center.x < bounds.left)
-                    cam.addTransition(sla::Camera::Left);
-                else if(center.x > bounds.left + bounds.width)
-                    cam.addTransition(sla::Camera::Right);
-                if(center.y < bounds.top)
-                    cam.addTransition(sla::Camera::Up);
-                else if(center.y > bounds.top + bounds.height)
-                    cam.addTransition(sla::Camera::Down);
-            }
+            player.setVelocity(sf::Vector2f(xDir,yDir)*movementSpeed);
         }
 
+        player.update(timePerFrame);
         cam.update(timePerFrame);
-        animator.update(timePerFrame);
 
         window.setView(cam.view());
 

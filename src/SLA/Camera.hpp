@@ -4,25 +4,31 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include <queue>
+#include "Collidable.hpp"
 
 namespace sla {
 
     class Camera {
     public:
-        enum Direction { Left,Right,Up,Down };
+        enum Direction { Left,Right,Up,Down,DirectionCount };
+
     private:
         const float transitionTime_;
         sf::View view_;
         std::queue<Direction> transitions_;
         float distanceMoved_;
-    public:
+        Collidable* focus_;
 
+    public:
 
         // takes width & height of "section"
         Camera(size_t width,size_t height,sf::Time transitionTime) :
-          transitionTime_(transitionTime.asSeconds()),distanceMoved_(0.f) {
+          transitionTime_(transitionTime.asSeconds()),
+          distanceMoved_(0.f),focus_(NULL) {
             view_.reset(sf::FloatRect(0,0,width,height));
         }
+
+        void setFocus(Collidable& focus);
 
         void addTransition(Direction where);
         // returns true if something changes

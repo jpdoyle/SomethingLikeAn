@@ -23,7 +23,8 @@ add_executable(${EXECUTABLE_NAME} src/main.cpp
                                   src/SLA/Camera.cpp
                                   src/SLA/ClipSheet.cpp
                                   src/SLA/Animation.cpp
-                                  src/SLA/Player.cpp)
+                                  src/SLA/Player.cpp
+                                  src/SLA/CollisionLayer.cpp)
 add_custom_command(TARGET SomethingLikeAn
                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/data 
                                                               ${PROJECT_BINARY_DIR}/data)

@@ -12,12 +12,18 @@ namespace sla {
     public:
         enum Direction { Left,Right,Up,Down,DirectionCount };
 
+        class Focusable : public Collidable {
+        public:
+            virtual void setTransitioning(bool transitioning)=0;
+            virtual bool transitioning() const=0;
+        };
+
     private:
         const float transitionTime_;
         sf::View view_;
         std::queue<Direction> transitions_;
         float distanceMoved_;
-        Collidable* focus_;
+        Focusable* focus_;
 
     public:
 
@@ -28,7 +34,7 @@ namespace sla {
             view_.reset(sf::FloatRect(0,0,width,height));
         }
 
-        void setFocus(Collidable& focus);
+        void setFocus(Focusable& focus);
 
         void addTransition(Direction where);
         // returns true if something changes

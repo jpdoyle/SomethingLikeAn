@@ -8,7 +8,7 @@
 
 namespace sla {
 
-    class Player : public Collidable,public sf::Drawable {
+    class Player : public Camera::Focusable,public sf::Drawable {
         static Animation animations_[Camera::DirectionCount];
         static bool inited_;
 
@@ -18,6 +18,11 @@ namespace sla {
         Animator* animator_;
         sf::Vector2f velocity_;
         Camera::Direction direction_;
+        bool transitioning_;
+
+    protected:
+        void draw(sf::RenderTarget& target,
+                  sf::RenderStates states) const;
         
     public:
         Player(const ClipSheet& sheet);
@@ -27,8 +32,11 @@ namespace sla {
 
         void move(sf::Vector2f delta);
 
-        void setVelocity(sf::Vector2f vel,
-                         bool changeAnimation = true);
+        void setVelocity(sf::Vector2f vel);
+
+        void setTransitioning(bool transitioning);
+
+        bool transitioning() const;
             
         sf::Vector2f velocity() const;
 
@@ -37,9 +45,6 @@ namespace sla {
         Camera::Direction direction() const;
 
         void update(sf::Time dt);
-
-        void draw(sf::RenderTarget& target,
-                  sf::RenderStates states) const;
     };
 
 }

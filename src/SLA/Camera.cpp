@@ -1,8 +1,7 @@
 #include "Camera.hpp"
-#include <iostream>
 
 namespace sla {
-    void Camera::setFocus(Collidable& focus) {
+    void Camera::setFocus(Focusable& focus) {
         focus_ = &focus;
     }
     void Camera::addTransition(Camera::Direction where) {
@@ -15,30 +14,31 @@ namespace sla {
 
     bool Camera::update(sf::Time dt) {
         if(!transitioning()) {
-            if(!focus_)
+            if(focus_) {
+                sf::FloatRect camBounds   = bounds(),
+                              focusBounds = focus_->bounds();
+
+                if(focusBounds.left < camBounds.left) {
+                    addTransition(Left);
+                } else if(focusBounds.left + focusBounds.width >
+                          camBounds.left   + camBounds.width) {
+                    addTransition(Right);
+                }
+                if(focusBounds.top < camBounds.top) {
+                    addTransition(Up);
+                } else if(focusBounds.top + focusBounds.height >
+                          camBounds.top   + camBounds.height) {
+                    addTransition(Down);
+                }
+            }
+            if(!transitioning()) {
+                if(focus_)
+                    focus_->setTransitioning(false);
                 return false;
-
-            sf::FloatRect camBounds   = bounds(),
-                          focusBounds = focus_->bounds();
-
-            if(focusBounds.left < camBounds.left) {
-                addTransition(Left);
-                std::cout << "Adding left" << std::endl;
-            } else if(focusBounds.left + focusBounds.width >
-                      camBounds.left   + camBounds.width) {
-                addTransition(Right);
-                std::cout << "Adding right" << std::endl;
             }
-            if(focusBounds.top < camBounds.top) {
-                addTransition(Up);
-                std::cout << "Adding up" << std::endl;
-            } else if(focusBounds.top + focusBounds.height >
-                      camBounds.top   + camBounds.height) {
-                addTransition(Down);
-                std::cout << "Adding down" << std::endl;
-            }
-            return false;
         }
+        if(focus_)
+            focus_->setTransitioning(true);
 
         float delta = 0,target = 0;
         
@@ -104,3 +104,4 @@ namespace sla {
         return sf::FloatRect(center-size/2.f,size);
     }
 }
+

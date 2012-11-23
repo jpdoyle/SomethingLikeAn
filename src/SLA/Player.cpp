@@ -66,10 +66,9 @@ namespace sla {
         sprite_.move(delta);
     }
 
-    void Player::setVelocity(sf::Vector2f vel,
-                             bool changeAnimation) {
+    void Player::setVelocity(sf::Vector2f vel) {
         velocity_ = vel;
-        if(changeAnimation) {
+        if(!transitioning_) {
             if(velocity_ == sf::Vector2f())
                 animator_->pause();
             else
@@ -79,6 +78,14 @@ namespace sla {
 
     sf::Vector2f Player::velocity() const {
         return velocity_;
+    }
+
+    void Player::setTransitioning(bool transitioning) {
+        transitioning_ = transitioning;
+    }
+
+    bool Player::transitioning() const {
+        return transitioning_;
     }
 
     void Player::setDirection(Camera::Direction direction) {
@@ -92,7 +99,8 @@ namespace sla {
 
     void Player::update(sf::Time dt) {
         animator_->update(dt);
-        move(velocity_*dt.asSeconds());
+        if(!transitioning_)
+            move(velocity_*dt.asSeconds());
     }
 
     void Player::draw(sf::RenderTarget& target,

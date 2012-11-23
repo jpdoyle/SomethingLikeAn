@@ -194,13 +194,14 @@ int main() {
         window.draw(player);
         window.display();
 
-        std::stringstream newTitle;
-        float seconds = frameTime.getElapsedTime().asSeconds();
-        newTitle << (int)(1/seconds+0.5)    << " FPS, "
-                 << (int)(seconds*1000+0.5) << " ms/frame";
-        window.setTitle(newTitle.str());
+        int msPerFrame = frameTime.getElapsedTime().asMilliseconds();
         
         sf::sleep(timePerFrame-frameTime.getElapsedTime());
+
+        std::stringstream newTitle;
+        newTitle << (int)(1/frameTime.getElapsedTime().asSeconds()+0.5)
+                 << " FPS, " << msPerFrame << " ms/frame";
+        window.setTitle(newTitle.str());
     }
 
     return 0;
